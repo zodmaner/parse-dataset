@@ -9,7 +9,7 @@
 
 (use extras)
 
-(: parse-user-and-follower (string --> (list-of fixnum)))
+(: parse-user-and-follower (string --> (or (list-of fixnum) (list-of boolean))))
 (define (parse-user-and-follower line)
   (map string->number (string-split line)))
 
@@ -34,10 +34,13 @@
                      (current-followers (the (or (list-of fixnum) null) '())))
             (if (eof-object? line)
                 (write-user-and-followers current-uid current-followers out)
-                (let* ((uid-and-fid (the (list-of fixnum) (parse-user-and-follower line)))
-                       (uid (the fixnum (first uid-and-fid)))
-                       (fid (the fixnum (second uid-and-fid))))
-                  (cond ((and (not (= current-uid uid)) (not (null? current-followers)))
+                (let* ((uid-and-fid (the (or (list-of fixnum) (list-of boolean))
+                                         (parse-user-and-follower line)))
+                       (uid (the (or fixnum boolean) (first uid-and-fid)))
+                       (fid (the (or fixnum boolean) (second uid-and-fid))))
+                  (cond ((not (and uid fid))
+                         (loop (read-line in) current-uid current-followers))
+                        ((and (not (= current-uid uid)) (not (null? current-followers)))
                          (write-user-and-followers current-uid current-followers out)
                          (loop line uid '()))
                         ((not (= current-uid uid))
