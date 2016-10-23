@@ -39,7 +39,7 @@
                                          (parse-user-and-follower line)))
                        (uid (the (or fixnum boolean) (first uid-and-fid)))
                        (fid (the (or fixnum boolean) (second uid-and-fid))))
-                  (cond ((not ((list-of? fixnum?) uid-and-fid))
+                  (cond ((boolean? uid)
                          (loop (read-line in) current-uid current-followers))
                         ((and (not (= current-uid uid)) (not (null? current-followers)))
                          (write-user-and-followers current-uid current-followers out)
