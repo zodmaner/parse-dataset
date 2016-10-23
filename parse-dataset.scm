@@ -1,6 +1,6 @@
 ;;;; parse-dataset.scm
 ;;;;
-;;;; A simple utility for parsing graph datasets from [0]and [1]
+;;;; A simple utility for parsing graph datasets from [0] and [1]
 ;;;; into a format that is more suitable for Pregel+ framework.
 ;;;;
 ;;;; [0] https://an.kaist.ac.kr/traces/WWW2010.html
