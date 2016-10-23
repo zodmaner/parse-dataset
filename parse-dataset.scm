@@ -1,9 +1,10 @@
 ;;;; parse-dataset.scm
 ;;;;
 ;;;; A simple utility for parsing the Twitter social graph dataset
-;;;; from [0] into a format that is more suitable for Pregel+ framework.
+;;;; from [0]and [1] into a format that is more suitable for Pregel+ framework.
 ;;;;
 ;;;; [0] https://an.kaist.ac.kr/traces/WWW2010.html
+;;;; [1] http://snap.stanford.edu/data/index.html
 ;;;;
 ;;;; Author: Smith Dhumbumroong <zodmaner@gmail.com>
 
