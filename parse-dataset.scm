@@ -21,16 +21,15 @@
   (define adjvs (if (hash-table-exists? ht v)
                     (hash-table-ref ht v)
                     '()))
-  (set! adjvs (lset-adjoin = adjvs adjv))
+  (when adjv
+    (set! adjvs (lset-adjoin = adjvs adjv)))
   (set! (hash-table-ref ht v) adjvs))
 
 (define (parse-line line)
-  (define v-and-adjv (map string->number (string-tokenize line)))
-  (values (first v-and-adjv)
-          (second v-and-adjv)))
+  (map string->number (string-tokenize line)))
 
 (define (write-vertex v adjvs output-port)
-  (fprintf output-port "~A~A~A" v #\tab (length adjvs))
+  (fprintf output-port "~A~A~A ~A" v #\tab v (length adjvs))
   (for-each (lambda (adjv)
               (fprintf output-port " ~A ~A" adjv v))
             adjvs)
@@ -42,12 +41,14 @@
     (lambda (in)
       (let loop ((line (read-line in)) (lr 0))
         (cond ((eof-object? line)
-               (printf "done!~%Start writing to output file... "))
+               (printf "done!~%Start writing to output file... ")
+               (flush-output))
               ((comment? line)
                (loop (read-line in) (add1 lr)))
               (else
-               (define-values (v adjv) (parse-line line))
-               (add-vertex v adjv ht)
+               (let-optionals (parse-line line) ((v #f) (adjv #f))
+                 (add-vertex v adjv ht)
+                 (add-vertex adjv #f ht))
                (printf "~A# of lines read: ~A... " #\return (add1 lr))
                (loop (read-line in) (add1 lr)))))))
   (call-with-output-file dst
