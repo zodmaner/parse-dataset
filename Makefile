@@ -2,13 +2,13 @@
 #
 # Author: Smith Dhumbumroong <zodmaner@gmail.com>
 
-COMPILE = csc
-FLAGS = -vf -O5 -static -strict-types
+SC = csc
+FLAGS = -v -O5 -d0 -no-trace -unsafe -fixnum-arithmetic -block -inline -strict-types -specialize
 
 all: parse-dataset
 
 parse-dataset: parse-dataset.scm
-	$(COMPILE) $(FLAGS) parse-dataset.scm
+	$(SC) $(FLAGS) parse-dataset.scm
 
 clean:
 	-rm parse-dataset

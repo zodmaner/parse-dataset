@@ -8,53 +8,61 @@
 ;;;;
 ;;;; Author: Smith Dhumbumroong <zodmaner@gmail.com>
 
-(use extras)
+(use extras
+     srfi-1
+     srfi-13
+     srfi-69)
 
-(: parse-user-and-follower (string --> (or (list-of fixnum) (list-of (or boolean fixnum)))))
-(define (parse-user-and-follower line)
-  (map string->number (string-split line)))
+(define (comment? line)
+  (or (string-index line #\#)
+      (string-index line #\%)))
 
-(: write-user-and-followers (fixnum (list-of fixnum) output-port -> *))
-(define (write-user-and-followers user-id followers output-port)
-  (fprintf output-port "~A~A~A " user-id #\tab (length followers))
-  (let loop ((fids (the (list-of fixnum) followers)))
-    (cond ((null? (cdr fids))
-           (fprintf output-port "~A~%" (car fids)))
-          (else
-           (fprintf output-port "~A " (car fids))
-           (loop (cdr fids))))))
+(define (add-vertex v adjv ht)
+  (define adjvs (if (hash-table-exists? ht v)
+                    (hash-table-ref ht v)
+                    '()))
+  (set! adjvs (lset-adjoin = adjvs adjv))
+  (set! (hash-table-ref ht v) adjvs))
 
-(: parse-dataset (string string -> *))
+(define (parse-line line)
+  (define v-and-adjv (map string->number (string-tokenize line)))
+  (values (first v-and-adjv)
+          (second v-and-adjv)))
+
+(define (write-vertex v adjvs output-port)
+  (fprintf output-port "~A~A~A" v #\tab (length adjvs))
+  (for-each (lambda (adjv)
+              (fprintf output-port " ~A ~A" adjv v))
+            adjvs)
+  (fprintf output-port "~%"))
+
 (define (parse-dataset src dst)
+  (define ht (make-hash-table))
   (call-with-input-file src
     (lambda (in)
-      (call-with-output-file dst
-        (lambda (out)
-          (let loop ((line (the (or string eof) (read-line in)))
-                     (current-uid (the fixnum 0))
-                     (current-followers (the (or (list-of fixnum) null) '())))
-            (if (eof-object? line)
-                (write-user-and-followers current-uid current-followers out)
-                (let* ((uid-and-fid (the (or (list-of fixnum) (list-of (or boolean fixnum)))
-                                         (parse-user-and-follower line)))
-                       (uid (the (or fixnum boolean) (first uid-and-fid)))
-                       (fid (the (or fixnum boolean) (second uid-and-fid))))
-                  (cond ((boolean? uid)
-                         (loop (read-line in) current-uid current-followers))
-                        ((and (not (= current-uid uid)) (not (null? current-followers)))
-                         (write-user-and-followers current-uid current-followers out)
-                         (loop line uid '()))
-                        ((not (= current-uid uid))
-                         (loop line uid '()))
-                        (else
-                         (loop (read-line in) current-uid (cons fid current-followers))))))))))))
+      (let loop ((line (read-line in)) (lr 0))
+        (cond ((eof-object? line)
+               (printf "done!~%Start writing to output file... "))
+              ((comment? line)
+               (loop (read-line in) (add1 lr)))
+              (else
+               (define-values (v adjv) (parse-line line))
+               (add-vertex v adjv ht)
+               (printf "~A# of lines read: ~A... " #\return (add1 lr))
+               (loop (read-line in) (add1 lr)))))))
+  (call-with-output-file dst
+    (lambda (out)
+      (hash-table-for-each ht
+                           (lambda (v adjvs)
+                             (write-vertex v adjvs out)))))
+  (printf "done!~%"))
 
 (define (main)
-  (let ((cmd-args (the (list-of string) (command-line-arguments))))
-    (if (not (= (length cmd-args) 2))
-        (printf "Usage: ~A original-file new-file~%" (program-name))
-        (let ((src (the string (first cmd-args)))
-              (dst (the string (second cmd-args))))
-          (parse-dataset src dst)))))
+  (define cmd-args (the (list-of string) (command-line-arguments)))
+  (if (not (= (length cmd-args) 2))
+      (printf "Usage: ~A original-file new-file~%" (program-name))
+      (let ((src (first cmd-args))
+            (dst (second cmd-args)))
+        (parse-dataset src dst))))
 
 (main)
